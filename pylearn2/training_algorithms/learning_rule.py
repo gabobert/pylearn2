@@ -16,7 +16,6 @@ from pylearn2.utils import sharedX
 from pylearn2.utils import wraps
 from pylearn2.monitor import Monitor
 
-
 class LearningRule():
     """
     A pylearn2 learning rule is an object which computes new parameter values
@@ -358,6 +357,64 @@ class AdaGrad(LearningRule):
             # Compute update
             epsilon = lr_scalers.get(param, 1.) * learning_rate
             delta_x_t = (- epsilon / T.sqrt(new_sum_squared_grad)
+                         * grads[param])
+
+            # Apply update
+            updates[sum_square_grad] = new_sum_squared_grad
+            updates[param] = param + delta_x_t
+
+        return updates
+
+class RadaGrad(LearningRule):
+    """
+    Implements the RadaGrad learning rule as described in:
+    "RADAGRAD: Random Projections for Adaptive
+    Stochastic Optimization", Krummenacher, G. and McWilliams, B.
+    """
+
+    def __init__(self, thau):
+        """
+        Set the size of the downprojection thau
+        """
+        self.thau = thau
+
+    def get_updates(self, learning_rate, grads, lr_scalers=None):
+        """
+        Compute the AdaGrad updates
+
+        Parameters
+        ----------
+        learning_rate : float
+            Learning rate coefficient.
+        grads : dict
+            A dictionary mapping from the model's parameters to their
+            gradients.
+        lr_scalers : dict
+            A dictionary mapping from the model's parameters to a learning
+            rate multiplier.
+        """
+        updates = OrderedDict()
+        for param in grads.keys():
+
+            # sum_square_grad := \sum g^2
+            sum_square_grad = sharedX(param.get_value() * 0.)
+
+            if param.name is not None:
+                sum_square_grad.name = 'sum_square_grad_' + param.name
+
+            # down project
+            print type(grads[param])
+            print grads[param].type
+            print grads[param]
+
+            # Accumulate gradient
+            new_sum_squared_grad = (
+                sum_square_grad + T.sqr(grads[param])
+            )
+
+            # Compute update
+            epsilon = lr_scalers.get(param, 1.) * learning_rate
+            delta_x_t = (-epsilon / T.sqrt(new_sum_squared_grad)
                          * grads[param])
 
             # Apply update

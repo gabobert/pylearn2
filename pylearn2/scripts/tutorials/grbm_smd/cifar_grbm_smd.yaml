@@ -82,6 +82,11 @@
         # Each gradient step will be based on this many examples
         batch_size : 5,
 
+        # Use Radagrad
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.RadaGrad {
+            thau: 100
+        },
+
         # We'll monitor our progress by looking at the first 20 batches of the
         # training dataset. This is an estimate of the training error. To be
         # really exhaustive, we could use the entire training set instead,
